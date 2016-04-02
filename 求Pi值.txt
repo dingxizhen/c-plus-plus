@@ -1,0 +1,25 @@
+#include<iostream>
+using namespace std;
+int main(int argc,char*argv[])
+{
+	double Pi=100,residual=100,e=0.01,M=0;
+	int N=0;
+	while(residual>e)
+	{
+		for(int i=0;i<90000;i++)
+		{
+			double x=double(rand())/double(RAND_MAX);
+			double y=double(rand())/double(RAND_MAX);
+			double z=(x-0.5)*(x-0.5)+(y-0.5)*(y-0.5);
+			if(z<=0.25)
+				{M=M++;
+				N=N++;}
+				else
+					N=N++;}
+				double pi=(M/N)*4;
+				residual=pi-Pi;
+				Pi=pi;
+	}
+	cout<<Pi<<endl;
+	return 0;
+}
