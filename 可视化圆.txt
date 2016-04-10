@@ -1,0 +1,134 @@
+#include<iostream>
+#include <ctime>  //调用系统时间库，作为随机数种子
+#include "cv.h"   // OpenCV库的头文件
+#include "highgui.h"    // OpenCV库的头文件，用来读取图像文件
+
+using namespace std;
+
+//获取图像中某个点的像素值，在本实验中直接调用该函数，无需改动
+unsigned char GetPixel(IplImage *img, int row, int col)
+{
+unsigned char *img_data = (unsigned char *)(img->imageData);
+int width_step = img->widthStep;
+return img_data[width_step * row + col];
+}
+
+//将图像中某个点的像素值赋值，在本实验中直接调用，无需改动
+void DrawPixel(IplImage *img, int row, int col, unsigned char v)
+{
+unsigned char *img_data = (unsigned char *)(img->imageData);
+int width_step = img->widthStep;
+img_data[width_step * row + col] = v;
+}
+
+// 将图像所有像素的像素值赋值为参数v的值，请完成相应的代码。height和width是需要传入的图像的高度（行）和宽度（列），下同。
+void DrawAll(IplImage *img, int height, int width, unsigned char v)
+{
+    int i,j;
+	for(i=0;i<height;i++)
+	{
+		for(j=0;j<width;j++)
+		{
+			 DrawPixel(img, i, j, v);
+		}
+	}// 在该函数内利用循环语句，并调用DawPrixel函数，将图像所有的像素都置为参数v的值
+}
+
+// 在图像中绘制圆的函数。圆心为(row,col)，半径为radius, 圆周上的像素值为v，请完成相应的代码
+void DrawCircle(IplImage *img, int height, int width, int row, int col, int radius, unsigned char v)
+{
+	int x,y;
+	double z;
+	for(x=0;x<height;x++)
+	{
+		for(y=0;y<width;y++)
+		{
+			z=(x-row)*(x-row)+(y-col)*(y-col);
+				if(((radius*radius-500)<z)&&((radius*radius+500)>z))
+					DrawPixel(img, x, y, v);
+		}
+	}
+}// 遍历图像所有的像素点的坐标，比较其到圆心的距离是否“等于”半径。
+// 注意，虽然像素点的坐标是整数，但计算的距离应该设置为浮点型。这时距离和半径相比，应该使用浮点型数比较的语句。
+// 利用课上所讲的浮点数的比较方法，设定一个“合适”的阈值，在图像中画出完整的圆周
+// 调用DrawPixel函数对相应的像素点进行赋值
+void Change(IplImage *img,int row,int col)
+{
+	int i,j,v;
+	for(i=0;i<row;i++)
+		for(j=0;j<col;j++)
+		{
+			v=GetPixel(img,i,j);
+	        if(v>0)
+			{
+		      v=0;
+	          DrawPixel(img, row, col, v);
+			}
+		}
+}
+// 设计函数并完成相应的代码，将图像中非零的像素值减去某个数值，从而在产生随机点“渐渐消失”效果时调用
+// 提示：调用GetPixel函数获取某像素点的像素值
+
+
+int main(int argc, char* argv[])
+{
+// 下面的函数为你创建一个OpenCV的图像，图像的宽度（width）和高度（height）由你设定。
+// 本实验中的图像为正方形，所以应该设置为相同的数值，也即内切圆的直径
+int width = 800;
+int height = 800;
+IplImage* img = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1); // IplImage是OpenCV中存储图像的结构体
+
+DrawAll(img, height, width,  0);// 调用DrawAll函数，将图像所有像素的像素值都赋值为0（全黑）
+DrawCircle(img, height, width, height/2, width/2, height/2, 255);// 调用DrawCircle函数，用白色（255）画内切圆，圆心（x,y）半径r
+
+cvNamedWindow("Image", CV_WINDOW_AUTOSIZE);//创建窗口
+    cvShowImage("Image", img);//显示图像
+cvWaitKey(0); //等待按键，开始采样随机点
+
+srand(time(0));  // 设置随机数种子
+double Pi=100,residual=100,e=0.01,M=0;
+	int N=0;
+	while(residual>e)
+	{
+		for(int i=0;i<10000;i++)
+		{
+			double x=rand()%800+1;
+			double y=rand()%800+1;
+			double z=(x-400)*(x-400)+(y-400)*(y-400);
+			if(z<=160000)
+			{
+				M=M++;
+				N=N++;
+			}
+				else
+					N=N++;
+		
+
+				double pi=(M/N)*4;
+				residual=pi-Pi;
+				Pi=pi;
+				
+				{
+    Change(img,height/2,width/2);// 调用你设计的函数，使图像中所有非零的像素值减去某个固定的常数，以产生动态的渐变效果，如果图像尺寸较小，则减去的数值应该适当大一些
+    double m=rand()%800+1;
+	double n=rand()%800+1;// 产生一个随机点
+	DrawPixel(img, m, n, 255);// 根据点的坐标找到对应图像中的像素点，将该像素值赋值为255。
+	DrawCircle(img, height, width, height/2, width/2, height/2, 255);// 重新绘制内切圆
+cvShowImage("Image", img);//显示图像
+cvWaitKey(5); //延时50毫秒
+// 同时在控制台输出当前产生的点的个数、落入圆内的点的个数、当前轮次计算得到的pi值
+}
+				cout<<"Pi: "<<Pi<<endl;
+		}
+	}
+	
+// 开始你的求pi循环
+// 在你的循环体内
+
+
+cvWaitKey(0); //等待按键，结束程序
+    cvDestroyWindow("Image");//销毁窗口
+    cvReleaseImage(&img); //释放图像
+
+    return 0;
+}
