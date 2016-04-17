@@ -1,0 +1,198 @@
+#include<iostream.h>
+#include "cv.h"
+#include "highgui.h"
+
+void ReadImageData(unsigned char *src, int rows, int cols,  unsigned char ** &dst)//读取图像数据到二维数组
+{  
+    int x,y,z=0;  
+    for(x=0;x<cols;x++)
+	{
+        for(y=0;y<rows;y++)
+		{
+            dst[x][y]=src[z];  
+            z++;
+        }
+    }  
+}  
+
+
+void WriteImageData(unsigned char *src, int rows, int cols, int width_step,unsigned char ** &dst)//将数组的数据写回源图像的内存区
+{  
+    int x,y,z=0;  
+    for (x=0;x<cols;x++)
+	{
+        for (y=0;y<rows;y++)
+		{
+             src[z]=dst[x][y];    
+            z++;  
+        }  
+    }      
+}  
+
+void FlipImageUpDown(unsigned char ** &dst,int rows, int cols)//上下翻转图像
+{
+    int x,y,a;
+	a=cols/2;
+	unsigned char z;  
+    for (x=0;x<a;x++)
+	{
+        for (y= 0;y<rows;y++)
+		{
+            z=dst[x][y];  
+            dst[x][y]=dst[cols-1-x][y];  
+            dst[cols-1-x][y]=z;    
+        }  
+    }   
+}
+
+void FlipImageLeftRight(unsigned char ** img, int rows, int cols)//左右翻转图像
+{
+	int x,y,a;
+	a=rows/2;
+	unsigned char z;  
+    for (x=0;x<cols;x++)
+	{
+        for (y=0;y<a;y++)
+		{
+            z=img[x][y];  
+            img[x][y]=img[x][rows-1-y];  
+            img[x][rows-1-y]=z;    
+        }  
+    }  
+}
+
+void reduce(unsigned char ** img, int rows, int cols,unsigned char **b)//缩小尺寸函数
+{
+	int x,y,a=0,c=0;
+	for(x=0;x<cols;x++)
+	{
+		for(y=0;y<rows;y++)
+		{
+			if(x%2==0&&y%2==0)
+			{
+				b[a][c]=img[x][y];
+				c++;
+				if(c==rows/2)
+				{
+					a++;
+				    c=0;
+				}
+			}
+		}
+	}
+}
+
+
+
+int main(int argc, char* argv[])
+{
+   	IplImage* img = cvLoadImage("Fruits.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+    cvNamedWindow("Image", CV_WINDOW_AUTOSIZE);//创建窗口
+    //cvShowImage("Image", img);//显示图像
+
+	unsigned char *img_data = (unsigned char *)(img->imageData); 
+    int height=img->height;    
+    int width=img->width;      
+    int width_step=img->widthStep;
+
+	cout<<width<<endl;
+	cout<<height<<endl;
+    
+	if(width_step==width)
+		cout<<"width_step等于列数*每个元素所占字节数"<<endl;
+
+	unsigned char **a;  //动态声明一个二维数组 
+    a=new unsigned char *[height];  
+    for(int m=0;m<height;m++)
+	{
+		a[m]=new unsigned char [width];
+	}
+    
+
+	ReadImageData(img_data, width, height,  a);
+	
+	cout<<"按1 实现图像的上下翻转"<<endl;
+	cout<<"按2 实现图像的左右反转"<<endl;
+	cout<<"按3 实现图像的尺寸缩小"<<endl;
+	cout<<"按0 程序结束"<<endl<<endl;
+	cout<<"注意：由于等待按键  'cvWaitKey(0)'  的影响，所以"<<endl;
+	cout<<"      每输入一个数字之前，都要用鼠标点击一下图像"<<endl;
+	cout<<"      并用键盘给予一条输入，程序才能继续运行下去"<<endl;
+
+	int e;
+	do
+	{
+		if(e==1)
+		{
+		    FlipImageUpDown(a, width, height);
+		}
+		else if(e==2)
+		{
+			FlipImageLeftRight(a, width, height);
+		}
+		else if(e==3)
+		{
+	        	unsigned char **b;  //动态声明一个二维数组b 
+                b=new unsigned char *[height];  
+                b[0] =new unsigned char[height * width];  
+                for (int x=1;x<height;x++)
+				{
+                 b[x]=b[x-1]+512;
+				}
+			reduce(a, width, height,b);
+		    IplImage *img2 = cvCreateImage(cvSize(width/2, height/2), IPL_DEPTH_8U, 1);
+	        unsigned char *img2_data = (unsigned char *)(img2->imageData);
+	        WriteImageData(img2_data, width/2, height/2, width_step, b);
+	        cvShowImage("Image", img2);
+			continue;
+
+
+		}
+		else
+		e=0;
+		 WriteImageData(img_data, width, height, width_step, a);		 
+		 cvShowImage("Image", img);
+		 cvWaitKey(0); //等待按键
+		 cin>>e;
+	}
+	while(e!=0);
+	unsigned char **b;  //动态声明一个二维数组b 
+    b=new unsigned char *[height];  
+    b[0] =new unsigned char[height * width];  
+    for (int x=1;x<height;x++)
+	{
+     b[x]=b[x-1]+512;
+	}
+
+	ReadImageData(img_data, width, height,  a);
+	
+	IplImage *img2 = cvCreateImage(cvSize(width/2, height/2), IPL_DEPTH_8U, 1);
+	unsigned char *img2_data = (unsigned char *)(img2->imageData);
+	WriteImageData(img2_data, width/2, height/2, width_step, b);
+	cvShowImage("Image", img2);
+    cvWaitKey(0); //等待按键
+
+
+
+    
+    cvDestroyWindow("Image");//销毁窗口
+    cvReleaseImage(&img); //释放图像
+
+    
+
+
+
+for(int l=0;l<width;l++)
+{
+	delete []a[l];
+}
+delete []a;
+for(int u=0;u<width;u++)
+{
+	delete []b[u];
+}
+delete []b;
+// 释放二维数组a和b的空间
+// write your code here
+    return 0;
+}
